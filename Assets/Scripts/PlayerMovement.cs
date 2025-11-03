@@ -12,7 +12,8 @@ using System.Collections;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Controls")]
-    public float speed = 10f;
+    public static float speed = 10f;
+    public static bool moving = true;
     float basespeed;
     float sprintspeed;
     public float sprintboost = 5f; //How much speed is increased by sprinting
@@ -74,7 +75,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (!hiding)
+        if (!hiding && moving)
         {
             float moveHorizontal = Input.GetAxisRaw("Horizontal");
             float moveVertical = Input.GetAxisRaw("Vertical");

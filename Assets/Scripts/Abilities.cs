@@ -11,6 +11,7 @@ public class Abilities : MonoBehaviour
     public List<GameObject> traps = new List<GameObject>();
     int index = 0;
     public GameObject hiding;
+    public bool settingTrap;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -35,9 +36,14 @@ public class Abilities : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.CapsLock))
+        if (Input.GetKey(KeyCode.E))
         {
-            StartCoroutine("SetTrap", activeTrap);
+            PlayerMovement.speed = 0;
+            if (!settingTrap)
+            {
+                settingTrap = true;
+                StartCoroutine("SetTrap", activeTrap);
+            }
         }
         else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
@@ -61,12 +67,21 @@ public class Abilities : MonoBehaviour
                 index += 1;
             }
         }
+        else
+        {
+            PlayerMovement.speed = 10f;
+            StopCoroutine("SetTrap");
+            settingTrap = false;
+        }
     }
     
     public IEnumerator SetTrap(GameObject trap)
     {
+        //Play Animation #
         yield return new WaitForSeconds(2);
         Instantiate(trap, transform.position, Quaternion.identity);
+        //yield return new WaitForSeconds(cooldown)
+        settingTrap = false;
     }
 
     public void Hide()

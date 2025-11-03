@@ -7,13 +7,18 @@ using UnityEngine.UI;
 [RequireComponent(typeof(NavMeshAgent))]
 public class NPCBehavioru : MonoBehaviour
 {
-    public enum npcState { Wander, Chase, RunAway, Investigate, Scared }
+    public enum npcState { Wander, Chase, Faint, Investigate }
+    public enum npcType { Elderly, Adult, Teen, Child, Pet}
     public npcState currentState = npcState.Wander;
+    public npcType thisType = npcType.Adult;
     public NavMeshAgent npcAgent;
    
     public GameObject player;
     public Rigidbody2D rb;
     float awarenessDistance;
+    public int scareMeterMax;
+    public float currentScareMeterValue;
+    public Transform investigationTarget;
     [Header("Type-Specific")]
     public float speed = 1;
     public float baseAwarenessDistance = 5; //The maximum distance an NPC can hear a normal noise
@@ -34,11 +39,14 @@ public class NPCBehavioru : MonoBehaviour
     public Transform target;
     public float chasetime = 1; //How many seconds they'll keep chasing after losing sight of you 
 
-    [Header("Scare Settings")]
-    public Transform runAwayDestination; //FOR PROTOTYPE: where the navmeshagent pathfinds to when running out of the house
-    private GameObject raycastedObject;
+    [Header("Investigate Settings")]
 
-    //TODO: Make multiple runAwayDestinations and/or allow NPCs to jump out of windows 
+
+    [Header("Faint Settings")]
+    public Sprite faintSprite;
+    
+    [Header("Misc")]
+    public float baseSpeed;
 
     void Start()
     {
@@ -70,7 +78,8 @@ public class NPCBehavioru : MonoBehaviour
 
             if (Physics2D.Raycast(transform.position, direction, seeingRange).collider.gameObject.CompareTag("Player"))
             {
-                if (Vector3.Angle(transform.forward, direction) < viewAngle / 2)
+                print(Vector3.Angle(transform.position, direction));
+                if (Vector3.Angle(transform.position, direction) < viewAngle / 2)
                 {
                     canSeeTarget = true;
                 }
@@ -89,57 +98,6 @@ public class NPCBehavioru : MonoBehaviour
         {
             canSeeTarget = false;
         }
-        /*
-        raycastedObject = Physics2D.Raycast(transform.position, transform.forward, seeingRange).collider.gameObject;
-        if (raycastedObject.CompareTag("Player"))
-        {
-            Vector3 direction = (raycastedObject.transform.position - transform.position).normalized;
-            if (Vector3.Angle(transform.forward, direction) < viewAngle / 2)
-            {
-                float distanceToTarget = Vector2.Distance(transform.position, target.transform.position);
-                if (distanceToTarget < seeingRange)
-                {
-                    canSeeTarget = true;
-                }
-                else
-                {
-                    canSeeTarget = false;
-                }
-            }
-        }
-        /*
-        Collider2D rangeCheck = Physics2D.OverlapCircle(transform.position, awarenessDistance);
-        print(rangeCheck);
-
-        if (rangeCheck && rangeCheck.gameObject.CompareTag("Player"))
-        {
-            target = rangeCheck.transform;
-            print(target);
-            
-
-            if (Vector3.Angle(transform.forward, direction) < viewAngle / 2)
-            {
-                
-
-                if (Physics2D.Raycast(transform.position, direction, distanceToTarget, targetMask))
-                {
-                    canSeeTarget = true;
-                }
-                else
-                {
-                    canSeeTarget = false;
-                }
-            }
-            else
-            {
-                canSeeTarget = false;
-            }
-        }
-        else
-        {
-            canSeeTarget = false;
-        }
-        */
     }
 
     void FixedUpdate()
@@ -155,8 +113,12 @@ public class NPCBehavioru : MonoBehaviour
                 Chase();
                 break;
 
-            case npcState.RunAway:
-                RunAway();
+            case npcState.Investigate:
+                Investigate();
+                break;
+
+            case npcState.Faint:
+                Faint();
                 break;
         }
 
@@ -168,15 +130,34 @@ public class NPCBehavioru : MonoBehaviour
         }
     }
 
+    private void Investigate()
+    {
+        if (thisType != npcType.Adult)
+        {
+            currentScareMeterValue += 5;
+        }
+
+        target = investigationTarget;
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (currentState == npcState.Chase && collision.gameObject.CompareTag("Player"))
+        {
+            //GameManager.GameOver
+        }
+    }
+
     void Wandering()
     {
-        Wander();
+        StartCoroutine("Wander");
         //Detect enemies
         LookForEnemy();
     }
 
-    private void Wander()
+    private IEnumerator Wander()
     {
+        yield return new WaitForSeconds(wanderFrequency); //
         if (!npcAgent.pathPending && !npcAgent.hasPath)
         {
             //Set NPC's destination to somewhere in a 10 unit range 
@@ -224,8 +205,18 @@ public class NPCBehavioru : MonoBehaviour
         currentState = npcState.Wander;
     }
 
-    void RunAway()
+    void Faint()
     {
-        npcAgent.SetDestination(runAwayDestination.position);
+        Instantiate(faintSprite, transform.position, Quaternion.identity);
+        //LevelManager.completionScore++;
+        Destroy(gameObject);
+    }
+
+    public IEnumerator Stun() //stops movement for some time
+    {
+        baseSpeed = npcAgent.speed;
+        npcAgent.speed = 0;
+        yield return new WaitForSeconds(1);
+        npcAgent.speed = baseSpeed;
     }
 }
