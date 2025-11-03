@@ -74,7 +74,8 @@ public class NPCBehavioru : MonoBehaviour
     {
         if (Vector2.Distance(transform.position, player.transform.position) < seeingRange)
         {
-            Vector2 direction = player.transform.position - transform.position;
+            Vector2 direction = player.transform.position - transform.forward;
+            print(direction);
 
             if (Physics2D.Raycast(transform.position, direction, seeingRange).collider.gameObject.CompareTag("Player"))
             {
@@ -122,7 +123,7 @@ public class NPCBehavioru : MonoBehaviour
                 break;
         }
 
-        if(npcAgent.destination != null)
+        if(npcAgent.destination != null) //Look at your destination
         {
             Vector3 dir = npcAgent.destination - transform.position;
             float angle = Mathf.Atan2(dir.y,dir.x) * Mathf.Rad2Deg;
@@ -192,6 +193,7 @@ public class NPCBehavioru : MonoBehaviour
     void Chase()
     {
         npcAgent.SetDestination(target.transform.position);
+        
         LookForEnemy();
         if (!canSeeTarget)
         {
@@ -212,6 +214,10 @@ public class NPCBehavioru : MonoBehaviour
         Destroy(gameObject);
     }
 
+    public void StartStun()
+    {
+        StartCoroutine("Stun");
+    }
     public IEnumerator Stun() //stops movement for some time
     {
         baseSpeed = npcAgent.speed;

@@ -35,7 +35,7 @@ public class Trap : MonoBehaviour
     public void ApplyEffects(GameObject target)
     {
         npcBehavior = target.GetComponent<NPCBehavioru>();
-        npcBehavior.StartCoroutine("Stun()");
+        npcBehavior.StartStun();
         print(npcBehavior.currentScareMeterValue);
         npcBehavior.baseSpeed -= speedDebuff;
         npcBehavior.currentScareMeterValue += scareValue;
