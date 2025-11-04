@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Trap
   - Resident
+  - Disturbance
   layers:
   - Default
   - TransparentFX

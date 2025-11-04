@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using UnityEditor.Timeline.Actions;
 using UnityEngine;
 using UnityEngine.AI;
@@ -40,7 +41,8 @@ public class NPCBehavioru : MonoBehaviour
     public float chasetime = 1; //How many seconds they'll keep chasing after losing sight of you 
 
     [Header("Investigate Settings")]
-
+    public bool canSeeInvestigationTarget;
+    public float baseInvestigateChance;
 
     [Header("Faint Settings")]
     public Sprite faintSprite;
@@ -101,6 +103,90 @@ public class NPCBehavioru : MonoBehaviour
         }
     }
 
+    public IEnumerator InvestigationFOV()
+    {
+        yield return new WaitForSeconds(0.2f);
+        InvestigationFOVCheck();
+    }
+
+    public void InvestigationFOVCheck()
+    {
+        print("plue");
+        //Find nearest trap or disturbance
+        float closestDistance = Mathf.Infinity;
+        GameObject closestTrap = null;
+        GameObject closestDisturbance = null;
+        GameObject closestInvestigationTarget = null;
+        float trapDistance = 0;
+        float disturbanceDistance = 0;
+        if (GameObject.FindGameObjectWithTag("Trap"))
+        {
+            foreach (GameObject trap in GameObject.FindGameObjectsWithTag("Trap"))
+            {
+                trapDistance = Vector2.Distance(trap.transform.position, transform.position);
+                if (trapDistance < closestDistance)
+                {
+                    closestDistance = trapDistance;
+                    closestTrap = trap;
+                }
+            }
+        }
+        print("closest dist:" + closestDistance);
+        print(closestTrap);
+        if (GameObject.FindGameObjectWithTag("Disturbance"))
+        {
+            foreach (GameObject disturbance in GameObject.FindGameObjectsWithTag("Disturbance"))
+            {
+                disturbanceDistance = Vector2.Distance(disturbance.transform.position, transform.position);
+                if (disturbanceDistance < closestDistance)
+                {
+                    closestDistance = disturbanceDistance;
+                    closestTrap = disturbance;
+                }
+            }
+        }
+        print(disturbanceDistance + " , " + trapDistance);
+        if (disturbanceDistance < trapDistance || trapDistance == 0)
+        {
+            closestInvestigationTarget = closestDisturbance;
+        }
+        if (trapDistance < disturbanceDistance || disturbanceDistance == 0)
+        {
+            closestInvestigationTarget = closestTrap;
+        }
+        print("closest: " + closestInvestigationTarget);
+        if (Vector2.Distance(transform.position, closestInvestigationTarget.transform.position) < seeingRange)
+        {
+            Vector2 direction = closestInvestigationTarget.transform.position - transform.position;
+            print(direction);
+
+            if (Physics2D.Raycast(transform.position, direction, seeingRange).collider.gameObject.CompareTag("Disturbance") ||
+            Physics2D.Raycast(transform.position, direction, seeingRange).collider.gameObject.CompareTag("Trap"))
+            {
+                print("Raycasted Object:" + Physics2D.Raycast(transform.position, direction, seeingRange).collider.gameObject.name);
+                print(Vector3.Angle(transform.position, direction));
+                if (Vector3.Angle(transform.position, direction) < viewAngle / 2)
+                {
+                    canSeeInvestigationTarget = true;
+                    investigationTarget = closestInvestigationTarget.transform;
+                }
+                else
+                {
+                    canSeeInvestigationTarget = false;
+                }
+            }
+            else
+            {
+                canSeeInvestigationTarget = false;
+            }
+
+        }
+        else
+        {
+            canSeeInvestigationTarget = false;
+        }
+    }
+
     void FixedUpdate()
     {
         awarenessDistance = baseAwarenessDistance * awarenessBoostPercentage;
@@ -133,12 +219,27 @@ public class NPCBehavioru : MonoBehaviour
 
     private void Investigate()
     {
-        if (thisType != npcType.Adult)
-        {
-            currentScareMeterValue += 5;
-        }
-
         target = investigationTarget;
+        if (investigationTarget.GetComponent<Trap>().canLure.Contains(gameObject))
+        {
+            if (thisType != npcType.Adult)
+            {
+                currentScareMeterValue += 5;
+            }
+
+
+            npcAgent.SetDestination(target.transform.position);
+            print(target);
+            if (!target.gameObject.activeSelf)
+            {
+                print("Go back to wandering");
+                currentState = npcState.Wander;
+            }
+        }
+        else
+        {
+            currentState = npcState.Wander;
+        }
     }
 
     void OnCollisionEnter(Collision collision)
@@ -154,6 +255,12 @@ public class NPCBehavioru : MonoBehaviour
         StartCoroutine("Wander");
         //Detect enemies
         LookForEnemy();
+        LookForInvestigation(); //Detects either traps or disturbances in the same way
+        print(investigationTarget);
+        if(canSeeInvestigationTarget)
+        {
+            currentState = npcState.Investigate;
+        }
     }
 
     private IEnumerator Wander()
@@ -188,6 +295,10 @@ public class NPCBehavioru : MonoBehaviour
             target = player.transform;
             currentState = npcState.Chase;
         }
+    }
+    public void LookForInvestigation()
+    {
+        StartCoroutine("InvestigationFOV");
     }
 
     void Chase()
@@ -224,5 +335,6 @@ public class NPCBehavioru : MonoBehaviour
         npcAgent.speed = 0;
         yield return new WaitForSeconds(1);
         npcAgent.speed = baseSpeed;
+        
     }
 }
