@@ -111,7 +111,6 @@ public class NPCBehavioru : MonoBehaviour
 
     public void InvestigationFOVCheck()
     {
-        print("plue");
         //Find nearest trap or disturbance
         float closestDistance = Mathf.Infinity;
         GameObject closestTrap = null;
@@ -137,11 +136,14 @@ public class NPCBehavioru : MonoBehaviour
         {
             foreach (GameObject disturbance in GameObject.FindGameObjectsWithTag("Disturbance"))
             {
-                disturbanceDistance = Vector2.Distance(disturbance.transform.position, transform.position);
-                if (disturbanceDistance < closestDistance)
+                if (disturbance.GetComponent<disturbance>().isAvailable == false)
                 {
-                    closestDistance = disturbanceDistance;
-                    closestTrap = disturbance;
+                    disturbanceDistance = Vector2.Distance(disturbance.transform.position, transform.position);
+                    if (disturbanceDistance < closestDistance)
+                    {
+                        closestDistance = disturbanceDistance;
+                        closestTrap = disturbance;
+                    }
                 }
             }
         }
@@ -219,26 +221,38 @@ public class NPCBehavioru : MonoBehaviour
 
     private void Investigate()
     {
-        target = investigationTarget;
-        if (investigationTarget.GetComponent<Trap>().canLure.Contains(gameObject))
+        if (investigationTarget.GetComponent<Trap>())
         {
-            if (thisType != npcType.Adult)
+            if (investigationTarget.GetComponent<Trap>().canLure.Contains(gameObject))
             {
-                currentScareMeterValue += 5;
+                if (thisType != npcType.Adult)
+                {
+                    currentScareMeterValue += 5;
+                }
+                target = investigationTarget;
+
+                npcAgent.SetDestination(target.transform.position);
+                print(target);
+                if (!target.gameObject.activeSelf)
+                {
+                    print("Go back to wandering");
+                    currentState = npcState.Wander;
+                }
             }
-
-
-            npcAgent.SetDestination(target.transform.position);
-            print(target);
-            if (!target.gameObject.activeSelf)
+            else
             {
-                print("Go back to wandering");
                 currentState = npcState.Wander;
             }
         }
         else
         {
-            currentState = npcState.Wander;
+            if (thisType != npcType.Adult)
+            {
+                currentScareMeterValue += 5;
+            }
+            target = investigationTarget;
+
+            npcAgent.SetDestination(target.transform.position);
         }
     }
 
