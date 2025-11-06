@@ -20,6 +20,8 @@ public class NPCBehavioru : MonoBehaviour
     public int scareMeterMax;
     public float currentScareMeterValue;
     public Transform investigationTarget;
+    public bool isInDark;
+    public bool hasBeenJumpScared = false;
     [Header("Type-Specific")]
     public float speed = 1;
     public float baseAwarenessDistance = 5; //The maximum distance an NPC can hear a normal noise
@@ -211,11 +213,15 @@ public class NPCBehavioru : MonoBehaviour
                 break;
         }
 
-        if(npcAgent.destination != null) //Look at your destination
+        if (npcAgent.destination != null) //Look at your destination
         {
             Vector3 dir = npcAgent.destination - transform.position;
-            float angle = Mathf.Atan2(dir.y,dir.x) * Mathf.Rad2Deg;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        }
+        if(currentScareMeterValue >= scareMeterMax)
+        {
+            currentState = npcState.Faint;
         }
     }
 
@@ -254,6 +260,7 @@ public class NPCBehavioru : MonoBehaviour
 
             npcAgent.SetDestination(target.transform.position);
         }
+        LookForEnemy();
     }
 
     void OnCollisionEnter(Collision collision)
@@ -292,13 +299,52 @@ public class NPCBehavioru : MonoBehaviour
         //Hearing
         //When the player enters a small sphere around the NPC, start chasing them
         //Someone would hear you if you walked right behind them
-        Collider[] collidersArrayHearing = Physics.OverlapSphere(transform.position, awarenessDistance);
-        foreach (Collider collider in collidersArrayHearing)
+        Collider2D[] collidersArrayHearing = Physics2D.OverlapCircleAll(transform.position, awarenessDistance, targetMask);
+        foreach (Collider2D collider in collidersArrayHearing)
         {
-            if (collider.CompareTag("Player"))
+            print("Jumpscared" + collider);
+            if (collider.gameObject.CompareTag("Player"))
             {
-                target = player.transform;
-                currentState = npcState.Chase;
+                print("Jumpscared" + collider.gameObject.name);
+                if (!hasBeenJumpScared)
+                {
+                    if (thisType != npcType.Child || thisType != npcType.Pet)
+                    {
+                        if (collider.GetComponent<Abilities>().isInDark)
+                        {
+                            //Play scream sound #
+                            currentScareMeterValue += 20;
+                            hasBeenJumpScared = true;
+                            StartCoroutine("JumpscareCooldown");
+                            print("Jumpscared");
+                        }
+                        else
+                        {
+                            if (currentState == npcState.Wander)
+                            {
+                                investigationTarget = player.transform;
+                                currentState = npcState.Investigate;
+                            }
+                            else if (currentState == npcState.Investigate)
+                            {
+                                target = player.transform;
+                                currentState = npcState.Chase;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //Play scream sound #
+                        currentScareMeterValue += 20;
+                        hasBeenJumpScared = true;
+                        StartCoroutine("JumpscareCooldown");
+                    }
+                }
+                else
+                {
+                    target = player.transform;
+                    currentState = npcState.Chase;
+                }
             }
         }
 
@@ -309,6 +355,12 @@ public class NPCBehavioru : MonoBehaviour
             target = player.transform;
             currentState = npcState.Chase;
         }
+    }
+    
+    public IEnumerator JumpscareCooldown()
+    {
+        yield return new WaitForSeconds(5);
+        hasBeenJumpScared = false;
     }
     public void LookForInvestigation()
     {
@@ -335,7 +387,8 @@ public class NPCBehavioru : MonoBehaviour
     void Faint()
     {
         Instantiate(faintSprite, transform.position, Quaternion.identity);
-        //LevelManager.completionScore++;
+        GameManager.completionScore++;
+        GameManager.LevelComplete(); 
         Destroy(gameObject);
     }
 

@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class disturbance : MonoBehaviour
 {
@@ -7,12 +8,15 @@ public class disturbance : MonoBehaviour
     public Sprite availableSprite;
     public Sprite unAvailableSprite;
     public bool isAvailable = true;
+    public Light2D LightSwitch;
+    public float initialRadius;
 
     [Header("Disturbance Settings")]
     public float canHearRadius;
     public float timeToFix;
     private NPCBehavioru npcBehavior;
     public GameObject pressEPrompt;
+    public float disturbanceScareValue;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -29,8 +33,12 @@ public class disturbance : MonoBehaviour
                 pressEPrompt.SetActive(true);
                 if (Input.GetKey(KeyCode.E))
                 {
-                    print("pluep");
                     ActivateDisturbance();
+                    if(LightSwitch)
+                    {
+                        initialRadius = LightSwitch.pointLightOuterRadius;
+                        LightSwitch.pointLightOuterRadius = 0;
+                    }
                 }
             }
             else
@@ -38,7 +46,7 @@ public class disturbance : MonoBehaviour
                 pressEPrompt.SetActive(false);
             }
         }
-        else if (other.gameObject.CompareTag("Resident"))
+        else if (other.gameObject.CompareTag("Resident") && other.gameObject.GetComponent<NPCBehavioru>().thisType != NPCBehavioru.npcType.Pet)
         {
             npcBehavior = other.GetComponent<NPCBehavioru>();
             StartCoroutine("Fix");
@@ -51,6 +59,10 @@ public class disturbance : MonoBehaviour
         sr.sprite = availableSprite;
         npcBehavior.currentState = NPCBehavioru.npcState.Wander;
         isAvailable = true;
+        if(LightSwitch)
+        {
+            LightSwitch.pointLightOuterRadius = initialRadius;
+        }
     }
     
     public void ActivateDisturbance()
@@ -65,6 +77,7 @@ public class disturbance : MonoBehaviour
             {
                 npcBehavior.investigationTarget = gameObject.transform;
                 npcBehavior.currentState = NPCBehavioru.npcState.Investigate;
+                npcBehavior.currentScareMeterValue += disturbanceScareValue;
             }
         }
     }

@@ -78,7 +78,7 @@ public class Abilities : MonoBehaviour
     public IEnumerator SetTrap(GameObject trap)
     {
         //Play Animation #
-        yield return new WaitForSeconds(2);
+        yield return new WaitForSeconds(trap.GetComponent<Trap>().setUpTime);
         Instantiate(trap, transform.position, Quaternion.identity);
         //yield return new WaitForSeconds(cooldown)
         settingTrap = false;

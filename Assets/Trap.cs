@@ -7,9 +7,10 @@ public class Trap : MonoBehaviour
     private NPCBehavioru npcBehavior;
     public float speedDebuff;
     public float scareValue;
-    public int lureChance = 1;
+    public float lureChance = 1;
     public NPCBehavioru.npcType cantLureType;
     public List<GameObject> canLure = new List<GameObject>();
+    public float setUpTime;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -23,7 +24,11 @@ public class Trap : MonoBehaviour
             npcBehavior = resident.GetComponent<NPCBehavioru>();
             if(npcBehavior.thisType != cantLureType)
             {
-                if(npcBehavior.baseAwarenessDistance + Random.Range(-0.3f, 0.3f) < lureChance)
+                if (npcBehavior.thisType == NPCBehavioru.npcType.Child)
+                {
+                    canLure.Add(resident);
+                }
+                else if(npcBehavior.baseInvestigateChance + Random.Range(-0.3f, 0.3f) < lureChance)
                 {
                     canLure.Add(resident);
                 }
