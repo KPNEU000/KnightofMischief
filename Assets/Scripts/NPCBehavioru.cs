@@ -6,6 +6,8 @@ using UnityEngine.AI;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(Animator))]
+
 public class NPCBehavioru : MonoBehaviour
 {
     public enum npcState { Wander, Chase, Faint, Investigate }
@@ -48,9 +50,12 @@ public class NPCBehavioru : MonoBehaviour
 
     [Header("Faint Settings")]
     public Sprite faintSprite;
-    
+
     [Header("Misc")]
     public float baseSpeed;
+    
+    [Header("Animation")]
+    Animator animator;
 
     void Start()
     {
@@ -59,6 +64,7 @@ public class NPCBehavioru : MonoBehaviour
         npcAgent.updateUpAxis = false;
         npcAgent.updateRotation = false;
         npcAgent.SetDestination(new Vector2(Random.Range(transform.position.x, transform.position.x + 10), Random.Range(transform.position.y, transform.position.y + 10)));
+        animator = GetComponent<Animator>();
     }
 
     void OnDrawGizmos()
@@ -222,6 +228,7 @@ public class NPCBehavioru : MonoBehaviour
         if(currentScareMeterValue >= scareMeterMax)
         {
             currentState = npcState.Faint;
+            animator.SetInteger("animState", 1);
         }
     }
 
