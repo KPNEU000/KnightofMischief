@@ -101,6 +101,21 @@ public class PlayerMovement : MonoBehaviour
 
             rb.linearVelocity = new Vector2(moveHorizontal * speed, moveVertical * speed);
             //rb.AddForce(input * speed * Time.deltaTime);
+
+            if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
+        {
+        if (input.x > 0)
+            transform.rotation = UnityEngine.Quaternion.Euler(0, 0, 90);       // Right
+        else
+            transform.rotation = UnityEngine.Quaternion.Euler(0, 0, -90);     // Left
+        }
+        else
+        {
+            if (input.y > 0)
+                transform.rotation = UnityEngine.Quaternion.Euler(0, 0, 180);      // Up
+            else
+                transform.rotation = UnityEngine.Quaternion.Euler(0, 0, 0);     // Down
+        }
         }
     }
 

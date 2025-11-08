@@ -228,7 +228,6 @@ public class NPCBehavioru : MonoBehaviour
         if(currentScareMeterValue >= scareMeterMax)
         {
             currentState = npcState.Faint;
-            animator.SetInteger("animState", 1);
         }
     }
 
@@ -280,6 +279,8 @@ public class NPCBehavioru : MonoBehaviour
 
     void Wandering()
     {
+        animator.SetInteger("animState", 0);
+
         StartCoroutine("Wander");
         //Detect enemies
         LookForEnemy();
@@ -393,6 +394,7 @@ public class NPCBehavioru : MonoBehaviour
 
     void Faint()
     {
+        animator.SetInteger("animState", 1);
         Instantiate(faintSprite, transform.position, Quaternion.identity);
         GameManager.completionScore++;
         GameManager.LevelComplete(); 
